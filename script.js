@@ -426,6 +426,7 @@ function renderImageCanvas(id) {
 
   canvas.width  = state.canvasW;
   canvas.height = state.canvasH;
+  canvas.style.aspectRatio = `${state.canvasW} / ${state.canvasH}`;
   canvas.getContext('2d').putImageData(entry.imageData, 0, 0);
 }
 
@@ -435,6 +436,7 @@ function renderParityCanvas() {
 
   canvas.width  = state.canvasW;
   canvas.height = state.canvasH;
+  canvas.style.aspectRatio = `${state.canvasW} / ${state.canvasH}`;
   const id = new ImageData(new Uint8ClampedArray(state.parityData), state.canvasW, state.canvasH);
   canvas.getContext('2d').putImageData(id, 0, 0);
 
@@ -547,8 +549,14 @@ function onParityPointerMove(e) {
   if (!state.drag.active) return;
   e.preventDefault();
 
-  const W  = state.canvasW;
-  const dx = e.clientX - state.drag.startX;
+  const W = state.canvasW;
+  // Convert CSS-pixel drag delta → canvas-buffer-pixel delta.
+  // The canvas may be displayed at a different CSS size than its buffer
+  // (e.g. a 270px-wide buffer displayed at 480px CSS), so without this
+  // scaling the wipe line races ahead of or lags behind the pointer.
+  const rect  = document.getElementById('parity-canvas').getBoundingClientRect();
+  const scale = rect.width > 0 ? W / rect.width : 1;
+  const dx    = (e.clientX - state.drag.startX) * scale;
 
   if (dx < 0) {
     // Dragging left → extend left peel

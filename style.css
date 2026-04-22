@@ -181,8 +181,6 @@ main {
 .panel canvas {
   display: block;
   width: 100%;
-  aspect-ratio: 1;
-  object-fit: contain;
   background: #111;
 }
 
@@ -273,7 +271,6 @@ main {
 #parity-canvas {
   display: block;
   width: 100%;
-  aspect-ratio: 1;
   background: #111;
 }
 
