@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XORploritory</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="title-block">
+        <h1>XOR<span class="title-accent">ploritory</span></h1>
+        <p class="subtitle">XOR parity lets any one image be reconstructed from the others</p>
+      </div>
+      <button id="btn-add" class="btn btn-primary">+ Add Image</button>
+      <input type="file" id="file-input" accept="image/*" multiple hidden>
+    </div>
+  </header>
+
+  <main>
+    <section id="image-panels-section">
+      <div id="image-panels">
+        <div id="empty-hint" class="empty-hint">
+          <p>Load two or more images to begin.</p>
+          <p class="hint-sub">Each image is XOR'd into a parity image that can recover any one lost image — including itself.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="parity-section" hidden>
+      <div class="parity-label-row">
+        <span class="parity-label">XOR Parity</span>
+        <span id="parity-hint" class="parity-drag-hint">drag left or right to reveal</span>
+        <button id="btn-parity-reset" class="btn btn-small" hidden>Reset Wipe</button>
+        <button id="btn-parity-remove" class="btn btn-small btn-remove" hidden>Remove Parity</button>
+        <button id="btn-parity-reconstruct" class="btn btn-small btn-reconstruct" hidden>Reconstruct Parity</button>
+      </div>
+      <div id="parity-panel" class="parity-panel">
+        <canvas id="parity-canvas"></canvas>
+        <div id="parity-removed-overlay" class="removed-overlay" hidden>
+          <p>Parity removed</p>
+          <button class="btn btn-reconstruct" id="btn-parity-reconstruct-overlay">Reconstruct</button>
+        </div>
+      </div>
+      <div id="single-image-hint" class="single-image-hint" hidden>
+        Add at least 2 images for XOR parity to be meaningful.
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

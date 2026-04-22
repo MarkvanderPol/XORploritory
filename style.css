@@ -1,0 +1,295 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --surface2: #222;
+  --border: #2e2e2e;
+  --border-bright: #444;
+  --text: #e0e0e0;
+  --text-dim: #888;
+  --accent: #5b9bd5;
+  --accent-glow: rgba(91, 155, 213, 0.2);
+  --reconstruct: #4caf79;
+  --remove: #c0392b;
+  --panel-w: 280px;
+  --parity-w: 480px;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Header ─────────────────────────────────────────── */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.title-block {
+  flex: 1;
+}
+
+h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+
+.title-accent {
+  color: var(--accent);
+}
+
+.subtitle {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* ── Buttons ─────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid var(--border-bright);
+  border-radius: 6px;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn:hover {
+  background: #2e2e2e;
+  border-color: #666;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: #4a8abf;
+  border-color: #4a8abf;
+}
+
+.btn-small {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.btn-remove {
+  border-color: var(--remove);
+  color: #e57373;
+}
+
+.btn-remove:hover {
+  background: rgba(192, 57, 43, 0.2);
+}
+
+.btn-reconstruct {
+  border-color: var(--reconstruct);
+  color: #81c784;
+}
+
+.btn-reconstruct:hover {
+  background: rgba(76, 175, 121, 0.2);
+}
+
+/* ── Main layout ─────────────────────────────────────── */
+main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* ── Image panels row ────────────────────────────────── */
+#image-panels-section {
+  min-height: 60px;
+}
+
+#image-panels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.empty-hint {
+  padding: 40px 0;
+  color: var(--text-dim);
+  line-height: 2;
+}
+
+.hint-sub {
+  font-size: 12px;
+  max-width: 480px;
+}
+
+/* ── Image panel card ────────────────────────────────── */
+.panel {
+  width: var(--panel-w);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.2s, transform 0.2s;
+  position: relative;
+}
+
+.panel.is-removed {
+  opacity: 0.45;
+}
+
+.panel canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  background: #111;
+}
+
+.panel-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--surface2);
+}
+
+.panel-name {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.removed-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* ── Parity section ──────────────────────────────────── */
+#parity-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.parity-label-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  align-self: stretch;
+  justify-content: center;
+}
+
+.parity-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.parity-drag-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  transition: opacity 0.5s;
+}
+
+.parity-drag-hint.used {
+  opacity: 0;
+}
+
+/* ── Parity panel ────────────────────────────────────── */
+.parity-panel {
+  position: relative;
+  width: var(--parity-w);
+  max-width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: ew-resize;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.parity-panel:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-glow), 0 0 16px var(--accent-glow);
+}
+
+#parity-canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  background: #111;
+}
+
+.single-image-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 4px 0;
+}
+
+/* ── Panel appear animation ─────────────────────────── */
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.panel {
+  animation: panel-in 0.2s ease;
+}
