@@ -261,6 +261,7 @@ main {
   cursor: ew-resize;
   user-select: none;
   -webkit-user-select: none;
+  touch-action: none;
 }
 
 .parity-panel:hover {

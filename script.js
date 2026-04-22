@@ -27,6 +27,7 @@ const state = {
   // Drag / wipe state on the parity panel
   drag: {
     active: false,
+    pointerId: -1,
     startX: 0,
     initialLeftPx: 0,
     initialRightPx: 0,
@@ -319,12 +320,15 @@ function createParityPanel() {
     reconstructImage('parity');
   });
 
-  const canvas = document.getElementById('parity-canvas');
-  canvas.addEventListener('pointerdown',  onParityPointerDown);
-  canvas.addEventListener('pointermove',  onParityPointerMove);
-  canvas.addEventListener('pointerup',    onParityPointerUp);
-  canvas.addEventListener('pointercancel', onParityPointerUp);
-  canvas.addEventListener('dblclick', () => { resetWipe(); renderParityCanvas(); });
+  // pointerdown on the canvas starts a drag; move/up on document so the
+  // gesture is never lost even if the pointer leaves the canvas.
+  document.getElementById('parity-canvas')
+    .addEventListener('pointerdown', onParityPointerDown);
+  document.addEventListener('pointermove',  onParityPointerMove);
+  document.addEventListener('pointerup',    onParityPointerUp);
+  document.addEventListener('pointercancel', onParityPointerUp);
+  document.getElementById('parity-canvas')
+    .addEventListener('dblclick', () => { resetWipe(); renderParityCanvas(); });
 }
 
 function syncPanels() {
@@ -529,14 +533,16 @@ function renderWipeFrame() {
 // =============================================================
 
 function onParityPointerDown(e) {
-  if (document.getElementById('parity-panel').dataset.wipeDisabled) return;
+  // Only primary pointer (left mouse / first touch); skip if wipe is disabled
+  if (e.button !== undefined && e.button !== 0) return;
+  if (state.parityRemoved || state.images.some(img => img.removed)) return;
   if (state.images.length < 2) return;
 
   e.preventDefault();
-  document.getElementById('parity-canvas').setPointerCapture(e.pointerId);
 
-  state.drag.active        = true;
-  state.drag.startX        = e.clientX;
+  state.drag.active         = true;
+  state.drag.pointerId      = e.pointerId;
+  state.drag.startX         = e.clientX;
   state.drag.initialLeftPx  = state.drag.leftPx;
   state.drag.initialRightPx = state.drag.rightPx;
 
@@ -546,24 +552,21 @@ function onParityPointerDown(e) {
 }
 
 function onParityPointerMove(e) {
-  if (!state.drag.active) return;
+  if (!state.drag.active || e.pointerId !== state.drag.pointerId) return;
   e.preventDefault();
 
   const W = state.canvasW;
-  // Convert CSS-pixel drag delta → canvas-buffer-pixel delta.
-  // The canvas may be displayed at a different CSS size than its buffer
-  // (e.g. a 270px-wide buffer displayed at 480px CSS), so without this
-  // scaling the wipe line races ahead of or lags behind the pointer.
+  // Convert CSS-pixel delta → canvas-buffer-pixel delta.
+  // The canvas buffer may differ from its CSS display size, so without
+  // this scaling the wipe line races or barely moves relative to the pointer.
   const rect  = document.getElementById('parity-canvas').getBoundingClientRect();
   const scale = rect.width > 0 ? W / rect.width : 1;
   const dx    = (e.clientX - state.drag.startX) * scale;
 
   if (dx < 0) {
-    // Dragging left → extend left peel
     const newLeft = state.drag.initialLeftPx + (-dx);
     state.drag.leftPx = Math.min(Math.max(0, newLeft), W - state.drag.rightPx - 1);
   } else {
-    // Dragging right → extend right peel
     const newRight = state.drag.initialRightPx + dx;
     state.drag.rightPx = Math.min(Math.max(0, newRight), W - state.drag.leftPx - 1);
   }
@@ -575,9 +578,8 @@ function onParityPointerMove(e) {
 }
 
 function onParityPointerUp(e) {
-  if (!state.drag.active) return;
+  if (!state.drag.active || e.pointerId !== state.drag.pointerId) return;
   state.drag.active = false;
-  document.getElementById('parity-canvas').releasePointerCapture(e.pointerId);
 }
 
 function resetWipe() {
