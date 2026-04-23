@@ -411,14 +411,17 @@ function updateParityPanelUI() {
     btnRemove.hidden = state.images.length < 2 || removedCount() > 0;
   }
 
-  // Disable wipe if any data image is removed
+  // Disable wipe when any image (data or parity) is in the removed state
   const wipeDisabled = state.parityRemoved || state.images.some(e => e.removed);
   parityPanel.dataset.wipeDisabled = wipeDisabled ? '1' : '';
-  parityPanel.style.cursor = (state.parityRemoved || wipeDisabled) ? 'default' : 'ew-resize';
+  parityPanel.style.cursor = wipeDisabled ? 'default' : 'ew-resize';
 
-  // Drag hint visibility
-  const hint = document.getElementById('parity-hint');
-  if (hint) hint.style.display = wipeDisabled ? 'none' : '';
+  // Show/hide the appropriate hints
+  const dragHint      = document.getElementById('parity-hint');
+  const wipeHint      = document.getElementById('wipe-disabled-hint');
+  const dataImageGone = !state.parityRemoved && state.images.some(e => e.removed);
+  if (dragHint)  dragHint.style.display  = wipeDisabled ? 'none' : '';
+  if (wipeHint)  wipeHint.hidden         = !dataImageGone;
 }
 
 // =============================================================
@@ -456,15 +459,17 @@ function renderParityCanvas() {
  *
  * The parity canvas is divided into three horizontal zones:
  *
- *   Left zone  [0 .. leftPx):       parityData XOR leftCum[k]
- *                                   = XOR of images[k+1..N-1]  (left images peeled off)
- *
- *   Right zone [W-rightPx .. W):    parityData XOR rightCum[k]
- *                                   = XOR of images[0..N-2-k]  (right images peeled off)
- *
+ *   Left zone  [0 .. leftPx):       uniform reveal based on total drag distance
+ *   Right zone [W-rightPx .. W):    uniform reveal based on total drag distance
  *   Middle     [leftPx .. W-rightPx): parityData  (raw chaos)
  *
- * As the user drags, the chaos resolves into real images — the visual "wow".
+ * Key design: k (which images have been peeled) is determined by the TOTAL
+ * drag distance, not by the column position. This gives a clean uniform
+ * revealed rectangle rather than a stepped gradient.
+ *
+ * Band width = W/(N-1) so a full-width drag peels N-1 images, leaving the
+ * last one fully visible. Avoids the "goes black" problem that occurs when
+ * all N images are peeled (leaving nothing).
  */
 function renderWipeFrame() {
   state.drag.rafPending = false;
@@ -479,8 +484,19 @@ function renderWipeFrame() {
 
   const leftPx  = Math.round(Math.max(0, state.drag.leftPx));
   const rightPx = Math.round(Math.max(0, state.drag.rightPx));
-  const bw      = W / N;   // band width per image (floating-point)
-  const parity  = state.parityData;
+
+  // W/(N-1): full drag reveals the last remaining image, never black.
+  // With N=2 images bw=W, so any drag < W shows image B in the left zone.
+  // With N=3 images bw=W/2, so the first half reveals B XOR C, second half reveals C.
+  const bw = N > 1 ? W / (N - 1) : W;
+
+  // k is uniform for the entire zone — determined by total drag, not column.
+  const kLeft  = leftPx  > 0 ? Math.min(Math.floor(leftPx  / bw), N - 1) : -1;
+  const kRight = rightPx > 0 ? Math.min(Math.floor(rightPx / bw), N - 1) : -1;
+
+  const parity     = state.parityData;
+  const leftStrip  = kLeft  >= 0 ? state.leftCum[kLeft]   : null;
+  const rightStrip = kRight >= 0 ? state.rightCum[kRight] : null;
 
   const output = new Uint8ClampedArray(W * H * 4);
 
@@ -488,30 +504,20 @@ function renderWipeFrame() {
     const rowOff = y * W * 4;
     for (let x = 0; x < W; x++) {
       const idx = rowOff + x * 4;
+      const strip = (x < leftPx && leftStrip)       ? leftStrip
+                  : (x >= W - rightPx && rightStrip) ? rightStrip
+                  : null;
 
-      if (x < leftPx) {
-        // Left-peeled zone: XOR away the leftmost k+1 images
-        const k     = Math.min(Math.floor(x / bw), N - 1);
-        const strip = state.leftCum[k];
+      if (strip) {
         output[idx]     = parity[idx]     ^ strip[idx];
         output[idx + 1] = parity[idx + 1] ^ strip[idx + 1];
         output[idx + 2] = parity[idx + 2] ^ strip[idx + 2];
-        output[idx + 3] = 255;
-      } else if (x >= W - rightPx) {
-        // Right-peeled zone: XOR away the rightmost k+1 images
-        const k     = Math.min(Math.floor((W - 1 - x) / bw), N - 1);
-        const strip = state.rightCum[k];
-        output[idx]     = parity[idx]     ^ strip[idx];
-        output[idx + 1] = parity[idx + 1] ^ strip[idx + 1];
-        output[idx + 2] = parity[idx + 2] ^ strip[idx + 2];
-        output[idx + 3] = 255;
       } else {
-        // Middle: raw parity chaos
         output[idx]     = parity[idx];
         output[idx + 1] = parity[idx + 1];
         output[idx + 2] = parity[idx + 2];
-        output[idx + 3] = 255;
       }
+      output[idx + 3] = 255;
     }
   }
 
