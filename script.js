@@ -123,25 +123,32 @@ function buildCumulativeXOR(imageDataArray) {
 // =============================================================
 
 async function handleAddImage(file) {
-  const dataURL = await readFileAsDataURL(file);
+  console.log('[XOR] loading:', file.name);
+  try {
+    const dataURL = await readFileAsDataURL(file);
 
-  // First image sets the canvas dimensions
-  if (state.images.length === 0) {
-    const size = await getImageNaturalSize(dataURL);
-    const maxDim = 480;
-    const scale = Math.min(1, maxDim / Math.max(size.w, size.h));
-    state.canvasW = Math.round(size.w * scale);
-    state.canvasH = Math.round(size.h * scale);
+    // First image sets the canvas dimensions
+    if (state.images.length === 0) {
+      const size = await getImageNaturalSize(dataURL);
+      const maxDim = 480;
+      const scale = Math.min(1, maxDim / Math.max(size.w, size.h));
+      state.canvasW = Math.round(size.w * scale);
+      state.canvasH = Math.round(size.h * scale);
+      console.log('[XOR] canvas size set to', state.canvasW, 'x', state.canvasH);
+    }
+
+    const imageData = await resizeImageData(dataURL, state.canvasW, state.canvasH);
+    const entry = { id: state.nextId++, name: file.name, imageData, removed: false };
+    state.images.push(entry);
+    console.log('[XOR] image added, total:', state.images.length);
+
+    recomputeAll();
+    syncPanels();
+    renderImageCanvas(entry.id);
+    renderParityCanvas();
+  } catch (err) {
+    console.error('[XOR] handleAddImage failed:', err);
   }
-
-  const imageData = await resizeImageData(dataURL, state.canvasW, state.canvasH);
-  const entry = { id: state.nextId++, name: file.name, imageData, removed: false };
-  state.images.push(entry);
-
-  recomputeAll();
-  syncPanels();
-  renderImageCanvas(entry.id);
-  renderParityCanvas();
 }
 
 function readFileAsDataURL(file) {
@@ -535,9 +542,16 @@ function renderWipeFrame() {
 function onParityPointerDown(e) {
   // Only primary pointer (left mouse / first touch); skip if wipe is disabled
   if (e.button !== undefined && e.button !== 0) return;
-  if (state.parityRemoved || state.images.some(img => img.removed)) return;
-  if (state.images.length < 2) return;
+  if (state.parityRemoved || state.images.some(img => img.removed)) {
+    console.log('[XOR] pointerdown blocked: parity or image removed');
+    return;
+  }
+  if (state.images.length < 2) {
+    console.log('[XOR] pointerdown blocked: need ≥2 images, have', state.images.length);
+    return;
+  }
 
+  console.log('[XOR] drag START at clientX', e.clientX);
   e.preventDefault();
 
   state.drag.active         = true;
@@ -553,6 +567,7 @@ function onParityPointerDown(e) {
 
 function onParityPointerMove(e) {
   if (!state.drag.active || e.pointerId !== state.drag.pointerId) return;
+  console.log('[XOR] drag MOVE dx=', (e.clientX - state.drag.startX).toFixed(1));
   e.preventDefault();
 
   const W = state.canvasW;
@@ -596,6 +611,7 @@ function resetWipe() {
 // =============================================================
 
 function init() {
+  console.log('[XOR] init — script loaded OK');
   const btnAdd    = document.getElementById('btn-add');
   const fileInput = document.getElementById('file-input');
 
