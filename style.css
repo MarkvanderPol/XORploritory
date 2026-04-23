@@ -215,6 +215,12 @@ main {
   color: var(--text-dim);
 }
 
+/* [hidden] has equal specificity to .removed-overlay so the browser default
+   display:none loses to our display:flex above. Override explicitly. */
+.removed-overlay[hidden] {
+  display: none;
+}
+
 /* ── Parity section ──────────────────────────────────── */
 #parity-section {
   display: flex;
